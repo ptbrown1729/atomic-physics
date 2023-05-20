@@ -1,6 +1,6 @@
 # atomic physics tools
 Various tools for doing atomic physics calculations, including calculating eigenstates of the 
-hyperfine and Zeeman  interactions versus magnetic field (i.e. solving the Breit-Rabi problem),
+hyperfine and Zeeman interactions versus magnetic field (i.e. solving the Breit-Rabi problem),
 calculating branching ratios for alkali atoms decaying from the D1 or D2 transition, and tools
 for solving the  optical Bloch equations.
 
