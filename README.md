@@ -14,6 +14,14 @@ Useful background reading
 - J.T.M. Walraven's [notes](https://staff.fnwi.uva.nl/j.t.m.walraven/walraven/Lectures.htm)
 - [Optical molasses and multilevel atoms: theory](https://doi.org/10.1364/JOSAB.6.002058)
 
+To install this code
+```
+git clone https://github.com/ptbrown1729/atomic-physics.git
+cd atomic-physics
+pip install .
+```
+If you wish to edit the code, install with the `-e` option by replacing the last line with `pip install -e .`.
+
 ## [matrix_elem.py](atomic_physics/matrix_elem.py)
 Calculate the angular portion of atomic matrix elements.
 
