@@ -5,7 +5,7 @@ see https://www.physics.ncsu.edu/jet/techdocs/pdf/PropertiesOfLi.pdf for informa
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matrix_elem as me
+import atomic_physics.matrix_elem as mel
 
 # 6-lithium
 # 2S_{1/2}
@@ -21,7 +21,7 @@ eigvects_coupled_all_fields = np.zeros((nstates, nstates, len(b_fields)))
 eigvects_uncoupled_all_fields = np.zeros((nstates, nstates, len(b_fields)))
 # breit rabi solution for each field
 for ii, b_field in enumerate(b_fields):
-    energies, eigvects_uncoupled, eigvects_coupled = me.breit_rabi(b_field, atomic_params, qnumbers)
+    energies, eigvects_uncoupled, eigvects_coupled = mel.breit_rabi(b_field, atomic_params, qnumbers)
     energies_all_fields[ii, :] = energies[:, 0]
     eigvects_uncoupled_all_fields[:, :, ii] = eigvects_uncoupled[:, :, 0]
     eigvects_coupled_all_fields[:, :, ii] = eigvects_coupled[:, :, 0]

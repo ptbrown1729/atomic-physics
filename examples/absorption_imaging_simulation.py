@@ -8,7 +8,6 @@ Simulate number of photons scattering during absorption, including the effect of
 velocity changes due to photon recoils
 """
 from random import random
-from math import exp
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,9 +17,10 @@ save_results = 1
 tend = 10e-6
 IoverIsat = 0.1
 
+
 # helper function to get scattering rate
-def ScattR(IIsat, Delta):
-    return Gamma / 2 * IIsat / (1 + IIsat + 4 * pow(Delta / Gamma, 2))
+def ScattR(IIsat, Delta): return Gamma / 2 * IIsat / (1 + IIsat + 4 * pow(Delta / Gamma, 2))
+
 
 # fundamental constants
 hbar = 1.054e-34
@@ -51,9 +51,9 @@ for ii in range(NRepeats):
     for t in np.arange(0, tend, dt):
         # Poisson distribution estimate of how many multiple photon events are possible
         GammaEff = ScattR(IoverIsat, CurrentDelta)
-        Prob0 = exp(-GammaEff * dt)
-        Prob1 = Gamma * dt * exp(-GammaEff * dt)
-        Prob2 = pow(GammaEff * dt, 2) / 2 * exp(-GammaEff * dt)
+        Prob0 = np.exp(-GammaEff * dt)
+        Prob1 = Gamma * dt * np.exp(-GammaEff * dt)
+        Prob2 = pow(GammaEff * dt, 2) / 2 * np.exp(-GammaEff * dt)
 
         BoolScatteredPhoton = (random() > Prob0)  # randomly choose if have scatter a photon
         if BoolScatteredPhoton:  # if a photon is sccattered, count it and add doppler shift to the detuning
@@ -67,7 +67,8 @@ for ii in range(NRepeats):
 AvgPhotons = sum(ScatteredPhotonList) / len(ScatteredPhotonList)
 ScatteredPhotonReduction = AvgPhotons / NPhotonsEstimate
 print("Average number of photons scattered = %0.2f" % AvgPhotons)
-print("Fractional reduction in number of photons scattered versus infinitely massive atom (no doppler shifts) = %0.3f" % ScatteredPhotonReduction)
+print("Fractional reduction in number of photons scattered versus infinitely"
+      " massive atom (no doppler shifts) = %0.3f" % ScatteredPhotonReduction)
 
 fig_handle = plt.figure()
 plt.hist(ScatteredPhotonList)

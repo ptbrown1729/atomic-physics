@@ -1,0 +1,9 @@
+# python
+**/__pycache__
+*.egg-info
+
+# pycharm
+.idea
+
+# plots
+*.png

@@ -4,16 +4,13 @@ Created on Wed Feb 12 11:12:06 2014
 
 @author: Peter
 """
-
-from __future__ import print_function
-import math
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.integrate import quad
-import numerov as num
-import wigner
-#import rydberg as ryd
+from atomic_physics import numerov, wigner
+
 
 def get_psi(atom, qnumbers, steps, solver='linear'):
     """
@@ -26,7 +23,7 @@ def get_psi(atom, qnumbers, steps, solver='linear'):
     """
     psi1 = ryd.rydberg(atom, qnumbers)
 
-    solve_psi1 = num.numerov(psi1.numerov_fun, psi1.alphac ** (1 / 3), 2 * qnumbers[0] * (qnumbers[0] + 15))
+    solve_psi1 = numerov.numerov(psi1.numerov_fun, psi1.alphac ** (1 / 3), 2 * qnumbers[0] * (qnumbers[0] + 15))
     if solver == "linear":
         rad_psi1 = solve_psi1.back_numerov(steps)
     elif solver == "log":
@@ -49,9 +46,10 @@ def get_psi(atom, qnumbers, steps, solver='linear'):
     N1 = quad(norm1, ri, rf)[0]
 
     def func(r):
-        return rad_psi1_interp(r) / math.sqrt(N1)
+        return rad_psi1_interp(r) / np.sqrt(N1)
 
     return func
+
 
 def rad_int(psi1, psi2, ri, rf):
     """
@@ -69,18 +67,24 @@ def rad_int(psi1, psi2, ri, rf):
     # set bounds of integration and integrate
     return quad(func, ri, rf)[0]
 
-# get full matrix element
-def get_coupled_mat_element(qnumbers1, qnumbers2, irr_tensor_index, radial_matrix_elem=1.):
+
+def get_coupled_mat_element(qnumbers1,
+                            qnumbers2,
+                            irr_tensor_index,
+                            radial_matrix_elem=1.):
     """
     Compute <((L'S')J'I')F' m_F' | u(1, q) | ((LS)JI)F m_F >
     this should be identical with
     <((LS)JI)F m_F | u(1, -q) | ((L'S')J'I')F' m_F' >*
 
-    Reference for the reduction to <L' || u(1) || L>: http://www.steck.us_interspecies/alkalidata/rubidium87numbers.1.6.pdf
-    Also see, but there are some typos, in particular in the second wigner 6j symbol: www.physics.ncsu.edu/jet/techdocs/pcf/PropertiesOfLi.pdf
-    Reduction of <L' || u(1) || L> to radial matrix element: https://journals.aps.org/pra/pdf/10.1103/PhysRevA.68.054701
-    Note that there are two different conventions for the reduced matrix elements, so must be careful. Steck and Gehm
-     use different conventions
+    Reference for the reduction to <L' || u(1) || L>:
+    http://www.steck.us_interspecies/alkalidata/rubidium87numbers.1.6.pdf
+    Also see, but there are some typos, in particular in the second wigner 6j symbol:
+    www.physics.ncsu.edu/jet/techdocs/pcf/PropertiesOfLi.pdf
+    Reduction of <L' || u(1) || L> to radial matrix element:
+    https://journals.aps.org/pra/pdf/10.1103/PhysRevA.68.054701
+    Note that there are two different conventions for the reduced matrix elements, so must be careful.
+    Steck and Gehm use different conventions
 
     :param qnumbers1: [L', S', J', I', F', mf']
     :param qnumbers2: [L, S, J, I, F, mf]
@@ -109,14 +113,19 @@ def get_coupled_mat_element(qnumbers1, qnumbers2, irr_tensor_index, radial_matri
 
     q = irr_tensor_index
     prefactor = (-1) ** (fp - mfp + jp + i + f + 1 + lp + s + j + 1 + lp) * \
-                math.sqrt((2*fp + 1) * (2*f + 1) * (2*jp + 1) * (2*j + 1) * (2*lp + 1) * (2*l + 1))
+                np.sqrt((2*fp + 1) * (2*f + 1) * (2*jp + 1) * (2*j + 1) * (2*lp + 1) * (2*l + 1))
     delta = (i == ip) * (s == sp)
-    wigner_symbols = wigner.Wigner3j(fp, 1, f, -mfp, q, mf) * wigner.Wigner6j(jp, i, fp, f, 1, j) * \
-                     wigner.Wigner6j(lp, s, jp, j, 1, l) * wigner.Wigner3j(l, 1, lp, 0, 0, 0)
+    wigner_symbols = wigner.wigner3j(fp, 1, f, -mfp, q, mf) * wigner.wigner6j(jp, i, fp, f, 1, j) * \
+                     wigner.wigner6j(lp, s, jp, j, 1, l) * wigner.wigner3j(l, 1, lp, 0, 0, 0)
 
     return prefactor * delta * wigner_symbols * radial_matrix_elem
 
-def get_mat_elem_from_redF(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_elem_F=1., convention='cg'):
+
+def get_mat_elem_from_redF(qnumbers1,
+                           qnumbers2,
+                           irr_tensor_index,
+                           reduced_mat_elem_F=1.,
+                           convention='cg'):
     """
     Compute <((L'S')J'I')F' m_F' | u(1, q) | ((LS)JI)F m_F > from the irreducible matrix element <F' || u(1) || F>
     :param qnumbers1: [L', S', J', I', F', mf']
@@ -143,19 +152,26 @@ def get_mat_elem_from_redF(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_e
     q = irr_tensor_index
 
     if convention == "cg":
-        factor = math.sqrt(2 * fp + 1)
+        factor = np.sqrt(2 * fp + 1)
     elif convention == "wigner":
         factor = 1.
     else:
-        raise error()
+        raise ValueError()
 
     # these two expressions are equivalent
-    matrix_el = get_mat_el_wigner_eckart([fp, mfp], [1, q], [f, mf], reduced_mat_elem=reduced_mat_elem_F, convention=convention)
+    matrix_el = get_mat_el_wigner_eckart([fp, mfp], [1, q], [f, mf],
+                                         reduced_mat_elem=reduced_mat_elem_F,
+                                         convention=convention)
     # matrix_el = (-1) ** (f - 1 + mfp) * factor * wigner.Wigner3j(f, 1, fp, mf, q, -mfp) * reduced_mat_elem_F
     # matrix_el = (-1) ** (fp - mfp) * factor * wigner.Wigner3j(fp, 1, f, -mfp, q, mf) * reduced_mat_elem_F
     return matrix_el
 
-def get_mat_elem_from_redJ(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_elem_J=1., convention='cg'):
+
+def get_mat_elem_from_redJ(qnumbers1,
+                           qnumbers2,
+                           irr_tensor_index,
+                           reduced_mat_elem_J=1.,
+                           convention='cg'):
     """
     Compute <((L'S')J'I')F' m_F' | u(1, q) | ((LS)JI)F m_F > from the irreducible matrix element <J'' || u(1) || J>
 
@@ -183,7 +199,12 @@ def get_mat_elem_from_redJ(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_e
     reduced_mat_elem_F = get_reduced_mat_elem_F([jp, ip, fp], [j, i, f], reduced_mat_elem_J, convention=convention)
     return get_mat_elem_from_redF(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_elem_F, convention=convention)
 
-def get_mat_elem_from_redL(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_elem_L=1., convention='cg'):
+
+def get_mat_elem_from_redL(qnumbers1,
+                           qnumbers2,
+                           irr_tensor_index,
+                           reduced_mat_elem_L=1.,
+                           convention='cg'):
     """
         Compute <((L'S')J'I')F' m_F' | u(1, q) | ((LS)JI)F m_F > from the reduced matrix element <L' || u(1) || L>
 
@@ -212,13 +233,18 @@ def get_mat_elem_from_redL(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_e
     reduced_mat_elem_J = get_reduced_mat_elem_J([lp, sp, jp], [l, s, j], reduced_mat_elem_L, convention=convention)
     return get_mat_elem_from_redJ(qnumbers1, qnumbers2, irr_tensor_index, reduced_mat_elem_J, convention=convention)
 
+
 # get reduced matrix elements
-def get_reduced_mat_elem_F(qnumbers1, qnumbers2, reduced_mat_elem_J=1., convention='cg'):
+def get_reduced_mat_elem_F(qnumbers1,
+                           qnumbers2,
+                           reduced_mat_elem_J=1.,
+                           convention='cg'):
     """
     Compute the reduced matrix element <(J'I')F' || u(1) || (JI)F >.
 
-    This matrix element can be defined using two different conventions, which we will term "cg" for Clebsch-Gordan and
-    "wigner" below. Note: the Gehm datasheet uses the "wigner" convention and the Steck datasheets use the "cg" convention.
+    This matrix element can be defined using two different conventions, which we will term "cg" for
+    Clebsch-Gordan and "wigner" below. Note: the Gehm datasheet uses the "wigner" convention and the
+    Steck datasheets use the "cg" convention.
 
     #######################
     # "cg" convention
@@ -226,11 +252,14 @@ def get_reduced_mat_elem_F(qnumbers1, qnumbers2, reduced_mat_elem_J=1., conventi
     Using the "cg" convention this is defined by:
     <(J'I') F' mf' | u(1,q) | (JI) F mf> = <F mf | F' mf' 1 q> <(J'I')F' || u(1) || (JI)F >
     we can write this numerous different ways using symmetries of the 3j coefficients.
-    = (-1) ** (F - 1 + mf') * sqrt(2F' + 1) * wigner3j(F, 1, F', mf, q, -mf') * <(J'I')F' || u(1) || (JI)F >_cg
-    = (-1) ** (F' - mf')    * sqrt(2F' + 1) * wigner3j(F', 1, F, -mf', q, mf) * <(J'I')F' || u(1) || (JI)F >_cg
+    = (-1) ** (F - 1 + mf') * sqrt(2F' + 1) * wigner3j(F, 1, F', mf, q, -mf') *
+      <(J'I')F' || u(1) || (JI)F >_cg
+    = (-1) ** (F' - mf')    * sqrt(2F' + 1) * wigner3j(F', 1, F, -mf', q, mf) *
+      <(J'I')F' || u(1) || (JI)F >_cg
 
     We can write the reduced F matrix element in terms of the reduced J matrix element
-    <(J'I')F' || u(1) || (JI)F >_cg =     (-1) ** (F + J' + 1 + I) * sqrt( (2F + 1) (2J' + 1) ) * wigner6J(J', I, F', F, 1, J)
+    <(J'I')F' || u(1) || (JI)F >_cg = (-1) ** (F + J' + 1 + I) * sqrt( (2F + 1) (2J' + 1) ) *
+                                      wigner6J(J', I, F', F, 1, J)
 
     #######################
     # "wigner" convention
@@ -240,7 +269,8 @@ def get_reduced_mat_elem_F(qnumbers1, qnumbers2, reduced_mat_elem_J=1., conventi
     = (-1) ** (F - 1 + mf') * wigner3j(F, 1, F', mf, q, -mf') * <(J'I')F' || u(1) || (JI)F >_wigner
 
     Or in terms of the reduced J matrix element:
-    <(J'I')F' || u(1) || (JI)F >_wigner = (-1) ** (F + J' + 1 + I) * sqrt( (2F + 1) (2F' + 1) ) * wigner6J(J', I, F', F, 1, J)
+    <(J'I')F' || u(1) || (JI)F >_wigner = (-1) ** (F + J' + 1 + I) * sqrt( (2F + 1) (2F' + 1) ) *
+                                          wigner6J(J', I, F', F, 1, J)
 
     #######################
     # relationship between the two conventions
@@ -250,8 +280,9 @@ def get_reduced_mat_elem_F(qnumbers1, qnumbers2, reduced_mat_elem_J=1., conventi
     :param qnumbers1: [J', I', F']
     :param qnumbers2: [J, I, F]
     :param reduced_mat_elem_J:
-    :param convention: either "cg" for Clebsch-Gordan because the relationship for the full matrix element is related
-    to the product of a CG coefficient and the reduced matrix element. Or, "wigner". See above documentation for more
+    :param convention: either "cg" for Clebsch-Gordan because the relationship for the full matrix
+     element is related to the product of a CG coefficient and the reduced matrix element. Or, "wigner".
+      See above documentation for more
     information
     :return:
     """
@@ -265,14 +296,18 @@ def get_reduced_mat_elem_F(qnumbers1, qnumbers2, reduced_mat_elem_J=1., conventi
     F = qnumbers2[2]
 
     if convention == "cg":
-        factor = math.sqrt((2 * F + 1) * (2 * Jp + 1))
+        factor = np.sqrt((2 * F + 1) * (2 * Jp + 1))
     elif convention == "wigner":
-        factor = math.sqrt((2 * Fp + 1) * (2 * F + 1))
+        factor = np.sqrt((2 * Fp + 1) * (2 * F + 1))
     else:
-        raise error()
-    return (Ip == I) * (-1) ** (Jp + I + F + 1) * factor * wigner.Wigner6j(Jp, I, Fp, F, 1, J) * reduced_mat_elem_J
+        raise ValueError()
+    return (Ip == I) * (-1) ** (Jp + I + F + 1) * factor * wigner.wigner6j(Jp, I, Fp, F, 1, J) * reduced_mat_elem_J
 
-def get_reduced_mat_elem_J(qnumbers1, qnumbers2, reduced_mat_elem_L=1., convention='cg'):
+
+def get_reduced_mat_elem_J(qnumbers1,
+                           qnumbers2,
+                           reduced_mat_elem_L=1.,
+                           convention='cg'):
     """
     Compute the reduced matrix element <(L'S')J' || u(1) || (LS)J >. See the documentation for the function
     get_reduced_mat_elem_F() for more information
@@ -296,7 +331,11 @@ def get_reduced_mat_elem_J(qnumbers1, qnumbers2, reduced_mat_elem_L=1., conventi
     # with substitution L -> J, S -> I, F -> J
     return get_reduced_mat_elem_F([lp, sp, jp], [l, s, j], reduced_mat_elem_L, convention=convention)
 
-def get_reduced_mat_elem_L(qnumbers1, qnumbers2, radial_mat_elem=1., convention='cg'):
+
+def get_reduced_mat_elem_L(qnumbers1,
+                           qnumbers2,
+                           radial_mat_elem=1.,
+                           convention='cg'):
     """
     Compute the reduced matrix element <L'|| u(1) || L>.
     Typically using L' is the ground-state and L is the excited state.
@@ -312,35 +351,41 @@ def get_reduced_mat_elem_L(qnumbers1, qnumbers2, radial_mat_elem=1., convention=
     L = qnumbers2[0]
 
     if convention == "cg":
-        factor = math.sqrt((2 * L + 1))
+        factor = np.sqrt((2 * L + 1))
     elif convention == "wigner":
-        factor = math.sqrt((2 * L + 1) * (2 * Lp + 1))
+        factor = np.sqrt((2 * L + 1) * (2 * Lp + 1))
     else:
-        raise error()
+        raise ValueError()
 
     # TODO: so far no good way to check the numerical prefactor here
     # But see page 420 of "2017-Atomic-Physics" Appendix J. Irreducible Tensor Operators is useful
-    return (-1) ** Lp * factor * wigner.Wigner3j(L, 1, Lp, 0, 0, 0) * radial_mat_elem
+    return (-1) ** Lp * factor * wigner.wigner3j(L, 1, Lp, 0, 0, 0) * radial_mat_elem
 
-# misc reduction functions
-def get_mat_el_wigner_eckart(qnumbers1, qnumbers2, qnumbers3, reduced_mat_elem=1., convention='cg'):
+
+def get_mat_el_wigner_eckart(qnumbers1,
+                             qnumbers2,
+                             qnumbers3,
+                             reduced_mat_elem=1.,
+                             convention='cg'):
     """
     Compute <J' mj' | T(k, q) | J mj> using the Wigner-Eckart theorem.
 
     Using the 'cg' convention, we have
-    <J' mj' | T(k, q) | J mj> = (-1)**(J - k - mj') * wigner3j(J, k, J', mj, q, -mj') * sqrt(2*J' + 1) * <J' || T(k) || J>
+    <J' mj' | T(k, q) | J mj> = (-1)**(J - k - mj') * wigner3j(J, k, J', mj, q, -mj') *
+                                 sqrt(2*J' + 1) * <J' || T(k) || J>
                               = <J mj k q | J' mj'> * <J' || T(k) || J>
 
     Using the 'wigner' convention, we have
     <J' mj' | T(k, q) | J mj> = (-1)**(J - k - mj') * wigner3j(J, k, J', mj, q, -mj') * <J' || T(k) || J>
 
-    The value of the reduced matrix elements depends on the choice of convention, and we see from the above that
+    The value of the reduced matrix elements depends on the choice of convention,
+    and we see from the above that
     <J' || T(k) || J>_wigner = sqrt(2*J' + 1) * <J' || T(k) || J>_cg
 
     :param qnumbers1:
     :param qnumbers2:
     :param qnumbers3:
-    :param reduced_matrix_el:
+    :param reduced_mat_elem:
     :param convention:
     :return:
     """
@@ -355,15 +400,17 @@ def get_mat_el_wigner_eckart(qnumbers1, qnumbers2, qnumbers3, reduced_mat_elem=1
     mj = qnumbers3[1]
 
     if convention == "cg":
-        factor = math.sqrt(2 * Jp + 1)
+        factor = np.sqrt(2 * Jp + 1)
     elif convention == "wigner":
         factor = 1.
     else:
-        raise error()
+        raise ValueError()
 
-    return (-1) ** (J - k + mjp) * wigner.Wigner3j(J, k, Jp, mj, q, -mjp) * factor * reduced_mat_elem
+    return (-1) ** (J - k + mjp) * wigner.wigner3j(J, k, Jp, mj, q, -mjp) * factor * reduced_mat_elem
 
-def get_spherical_harm_triple_product(qnumbers1, qnumbers2, qnumbers3):
+def get_spherical_harm_triple_product(qnumbers1,
+                                      qnumbers2,
+                                      qnumbers3):
     """
     Compute the product of three spherical harmonics, which we can write as
      <L' ml' | Y^q_k(r) | L ml> = \int dr Y^{ml'}_{L'}(r) * Y^q_k(r) * Y^{ml}_L(r)
@@ -383,22 +430,30 @@ def get_spherical_harm_triple_product(qnumbers1, qnumbers2, qnumbers3):
     L = qnumbers3[0]
     ml = qnumbers3[1]
 
-    return (-1) ** mlp * np.sqrt( (2*Lp + 1) * (2*k + 1) * (2*L + 1) / (4*np.pi) ) * wigner.wigner3j(Lp, k, L, 0, 0, 0) * wigner.wigner3j(Lp, k, L, -mlp, q, ml)
+    result = (-1) ** mlp * np.sqrt((2*Lp + 1) * (2*k + 1) * (2*L + 1) / (4*np.pi)) * \
+             wigner.wigner3j(Lp, k, L, 0, 0, 0) * \
+             wigner.wigner3j(Lp, k, L, -mlp, q, ml)
 
-# get matrix elements between lines for all states in hyperfine basis
-def get_all_coupled_mat_elements(qnumbers_1, qnumbers_2, reduced_mat_elem=1, mode="L", convention='cg'):
+    return result
+
+
+def get_all_coupled_mat_elements(qnumbers_1,
+                                 qnumbers_2,
+                                 reduced_mat_elem=1,
+                                 mode="L",
+                                 convention='cg'):
     """
     compute matrix elements in the coupled basis for each possible polarization. <F' mf' | u(1, q) | F, mf>, where the
     primed variables correspond to qnumbers_1 and the unprimed correspond to qnumbers_2
     :param qnumbers_1: [ll', jj', ii']
     :param qnumbers_2: [ll, jj, ii]
-    :param reduced_mat_elem: either <J' || u(1) || J>, <L' || u(1) || L>, or R_{n'l'}{nl} depending on the value of the mode argument.
-    :param mode: If "J" compute the matrix elements from the value of <J' || u(1) || J>. If "L", compute the matrix
-    elements from the value <L' || u(1) || L>. If "R" compute the matrix elements from the value of
-    R_{n'l''}{nl}
+    :param reduced_mat_elem: either <J' || u(1) || J>, <L' || u(1) || L>, or R_{n'l'}{nl}
+      depending on the value of the mode argument.
+    :param mode: If "J" compute the matrix elements from the value of <J' || u(1) || J>. If "L",
+     compute the matrix elements from the value <L' || u(1) || L>. If "R" compute the matrix elements
+     from the value of R_{n'l''}{nl}
     :param convention: either "cg" or "wigner"
-    :return:
-    [mat_el_sigma_plus, mat_el_sigma_minus, mat_el_pi]: list of matrix elements matrices
+    :return: [mat_el_sigma_plus, mat_el_sigma_minus, mat_el_pi]: list of matrix elements matrices
     polarizations: list of polarizations
     """
 
@@ -436,23 +491,29 @@ def get_all_coupled_mat_elements(qnumbers_1, qnumbers_2, reduced_mat_elem=1, mod
             qnums_full_2 = [ll_2, ss, jj_2, ii_2, ff_2, mf_2]
 
             if mode == "L":
-                mat_sigp[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, 1, reduced_mat_elem, convention=convention)
-                mat_sigm[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, -1, reduced_mat_elem, convention=convention)
-                mat_pi[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, 0, reduced_mat_elem, convention=convention)
+                mat_sigp[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, 1,
+                                                          reduced_mat_elem, convention=convention)
+                mat_sigm[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, -1,
+                                                          reduced_mat_elem, convention=convention)
+                mat_pi[ii, jj] = get_mat_elem_from_redL(qnums_full_1, qnums_full_2, 0,
+                                                        reduced_mat_elem, convention=convention)
             elif mode == "J":
-                mat_sigp[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, 1, reduced_mat_elem, convention=convention)
-                mat_sigm[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, -1, reduced_mat_elem, convention=convention)
-                mat_pi[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, 0, reduced_mat_elem, convention=convention)
+                mat_sigp[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, 1,
+                                                          reduced_mat_elem, convention=convention)
+                mat_sigm[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, -1,
+                                                          reduced_mat_elem, convention=convention)
+                mat_pi[ii, jj] = get_mat_elem_from_redJ(qnums_full_1, qnums_full_2, 0,
+                                                        reduced_mat_elem, convention=convention)
             elif mode == "R":
                 mat_sigp[ii, jj] = get_coupled_mat_element(qnums_full_1, qnums_full_2, 1, radial_matrix_elem=1)
                 mat_sigm[ii, jj] = get_coupled_mat_element(qnums_full_1, qnums_full_2, -1, radial_matrix_elem=1)
                 mat_pi[ii, jj] = get_coupled_mat_element(qnums_full_1, qnums_full_2, 0, radial_matrix_elem=1)
             else:
-                raise error()
+                raise ValueError()
 
     return [mat_sigp, mat_sigm, mat_pi], [1, -1, 0], coupled_basis_p, coupled_basis
 
-# calculate decay rates
+
 def get_semiclassical_decay_rate(lambda_o):
     e = 1.602e-19
     m_e = 9.10938356e-31
@@ -460,9 +521,10 @@ def get_semiclassical_decay_rate(lambda_o):
     w = 2 * np.pi * c / lambda_o
     epsilon_o = 8.854187817e-12  # farads/meter
 
-    gamma = e ** 2 * w ** 2 / ( 6 * np.pi * epsilon_o * m_e * c ** 3)
+    gamma = e ** 2 * w ** 2 / (6 * np.pi * epsilon_o * m_e * c ** 3)
 
     return gamma
+
 
 def get_decay_rate(matrix_el, lambda_o):
     """
@@ -474,11 +536,12 @@ def get_decay_rate(matrix_el, lambda_o):
     """
     c = 299792458  # m/s
     w = 2 * np.pi * c / lambda_o
-    epsilon_o = 8.854187817e-12 # farads/meter
+    epsilon_o = 8.854187817e-12  # farads/meter
     h = 6.62607004e-34
     hbar = h / (2 * np.pi)
     gamma = w ** 3 / (3 * np.pi * epsilon_o * c ** 3) * np.abs(matrix_el) ** 2 / hbar
     return gamma
+
 
 def get_decay_rate_Dline(lambda_o, J, Jp, reduced_mat_elem_J, convention='cg'):
     """
@@ -501,10 +564,11 @@ def get_decay_rate_Dline(lambda_o, J, Jp, reduced_mat_elem_J, convention='cg'):
     elif convention == "cg":
         factor = (2 * Jp + 1) / (2 * J + 1)
     else:
-        raise error()
+        raise ValueError()
 
-    gamma = w ** 3 / (3 * np.pi * epsilon_o * c ** 3) * factor *  np.abs(reduced_mat_elem_J) ** 2 / hbar
+    gamma = w ** 3 / (3 * np.pi * epsilon_o * c ** 3) * factor * np.abs(reduced_mat_elem_J) ** 2 / hbar
     return gamma
+
 
 def gamma2matrixel_Dline(lambda_o, J, gamma, convention='cg'):
     """
@@ -538,17 +602,20 @@ def gamma2matrixel_Dline(lambda_o, J, gamma, convention='cg'):
     elif convention == "wigner":
         factor = 1 / (2 * J + 1)
     else:
-        raise error()
+        raise ValueError()
 
     # <J'=0.5 || u(1) || J>
-    reduced_mat_elem_J = np.sqrt( (hbar * gamma) /  (w ** 3 / (3 * np.pi * epsilon_o * c ** 3) * factor) )
+    reduced_mat_elem_J = np.sqrt((hbar * gamma) / (w ** 3 / (3 * np.pi * epsilon_o * c ** 3) * factor))
 
     # <L'=0 || u(1) || L=1>
     # [L, S, J]
-    j_helper = get_reduced_mat_elem_J([0, 0.5, Jp], [1, 0.5, J], reduced_mat_elem_L=1, convention=convention)
+    j_helper = get_reduced_mat_elem_J([0, 0.5, Jp], [1, 0.5, J],
+                                      reduced_mat_elem_L=1,
+                                      convention=convention)
     reduced_mat_elem_L = reduced_mat_elem_J / j_helper
 
     return reduced_mat_elem_J, reduced_mat_elem_L
+
 
 # calculate light shifts and decay rates in off-resonant dipole trap
 def get_lightshift_semiclass(lambda_o, gamma, lambda_laser, intensity):
@@ -574,30 +641,33 @@ def get_lightshift_semiclass(lambda_o, gamma, lambda_laser, intensity):
     lightshift in joules
     gamma in hertz
     """
-    c =  299792458 # m/s
-    h = 6.62607004e-34 # J * s
+    c = 299792458  # m/s
+    h = 6.62607004e-34  # J * s
     hbar = h / (2 * np.pi)
     wo = 2 * np.pi * c / lambda_o
-    ws = 2 * np.pi * c /lambda_laser
-    lightshift = -3 * np.pi * c ** 2 / (2 * wo ** 3) * gamma * (np.divide(1, wo - ws) + np.divide(1, wo + ws)) * intensity
-    gamma = 3 * np.pi * c ** 2 / (2 * wo ** 3) * np.divide(ws, wo) ** 3 * gamma ** 2 * (np.divide(1, wo - ws) + np.divide(1, wo + ws))**2 * intensity / hbar
+    ws = 2 * np.pi * c / lambda_laser
+    lightshift = -3 * np.pi * c ** 2 / (2 * wo ** 3) * gamma * \
+                 (np.divide(1, wo - ws) + np.divide(1, wo + ws)) * intensity
+    gamma = 3 * np.pi * c ** 2 / (2 * wo ** 3) * np.divide(ws, wo) ** 3 * gamma ** 2 * \
+            (np.divide(1, wo - ws) + np.divide(1, wo + ws))**2 * intensity / hbar
     return lightshift, gamma
+
 
 def get_all_lightshift_semiclass(lambda_d1, lambda_d2, gamma, lambda_laser, intensity, gf, F):
     """
-    Calculate lightshift of ground state hyperfine levels in a single F manifold accounting only for the D line.
+    Calculate lightshift of ground state hyperfine levels in a single F manifold accounting
+    only for the D line.
 
-    Note that this expression is good in the approximation that the detuning Delta is small compared to the size of the
-    absolute frequency. It should agree with the result from get_lightshift_semiclass when the detuning is large compared
-    with the fine structure splitting. in that case, Delta_d1 ~ Delta_d2 and the expression reduceds to the other function
-    to order Delta_fs / Delta
+    Note that this expression is good in the approximation that the detuning Delta is small compared to
+    the size of the absolute frequency. It should agree with the result from get_lightshift_semiclass when
+    the detuning is large compared with the fine structure splitting. in that case, Delta_d1 ~ Delta_d2 and
+    the expression reduceds to the other function to order Delta_fs / Delta
 
     :param lambda_d1:
     :param lambda_d2:
     :param gamma:
     :param lambda_laser:
     :param intensity:
-    :param irr_tensor_index:
     :param gf:
     :param F:
     :return:
@@ -608,18 +678,30 @@ def get_all_lightshift_semiclass(lambda_d1, lambda_d2, gamma, lambda_laser, inte
     wd1 = 2 * np.pi * c / lambda_d1
     wd2 = 2 * np.pi * c / lambda_d2
     wo = (2 * wd2 + wd1) / 3.
-    #wo = 0.5 * (wd1 + wd2)
+    # wo = 0.5 * (wd1 + wd2)
     ws = 2 * np.pi * c / lambda_laser
 
-    if np.abs( (wo - ws) / (wo + ws) ) > 0.1:
-        raise Warning('The detuning is not small compared to twice the frequency. Accuracy may suffer.')
+    if np.abs((wo - ws) / (wo + ws)) > 0.1:
+        warnings.warn('The detuning is not small compared to twice the frequency. Accuracy may suffer.')
 
-    shift_fn = lambda q: np.pi * c ** 2 / (2 * wo ** 3) * gamma * ( (2 + q * gf * fbasis[:, 1]) / (ws - wd1) + (1 - q * gf * fbasis[:, 1]) / (ws - wd2) ) * intensity
+    shift_fn = lambda q: np.pi * c ** 2 / (2 * wo ** 3) * gamma * \
+                         ((2 + q * gf * fbasis[:, 1]) / (ws - wd1) + (1 - q * gf * fbasis[:, 1]) / (ws - wd2)) * \
+                         intensity
     shift = np.concatenate((shift_fn(1)[:, None], shift_fn(-1)[:, None], shift_fn(0)[:, None]), axis=1)
     return shift, [1, -1, 0], fbasis
 
-def get_lightshift_Dline(b_fields, lambda_d1, lambda_d2, lambda_laser, intensity,
-                         I, params_g, params_d1, params_d2, reduced_matrixel_l, convention='cg'):
+
+def get_lightshift_Dline(b_fields,
+                         lambda_d1,
+                         lambda_d2,
+                         lambda_laser,
+                         intensity,
+                         I,
+                         params_g,
+                         params_d1,
+                         params_d2,
+                         reduced_matrixel_l,
+                         convention='cg'):
     """
     Compute lightshifts for each Zeeman sublevel of the ground state accounting only for the D1 and D2 lines using
     second order perturbation theory.
@@ -774,8 +856,12 @@ def get_lightshift_Dline(b_fields, lambda_d1, lambda_d2, lambda_laser, intensity
 
     return light_shifts, [1, -1, 0], gamma
 
-# calculate branching ratios
-def get_branching_ratios(b_fields, atomic_params_g, qnumbers_g, atomic_params_e, qnumbers_e):
+
+def get_branching_ratios(b_fields,
+                         atomic_params_g,
+                         qnumbers_g,
+                         atomic_params_e,
+                         qnumbers_e):
     """
     Given two atomic transitions, print the branching ratios between the excited and ground states.
     :param b_fields: magnetic field to compute branching ratios at
@@ -822,12 +908,12 @@ def get_branching_ratios(b_fields, atomic_params_g, qnumbers_g, atomic_params_e,
     for ii in range(0, b_fields.size):
         matrix_elems_sigp[:, :, ii] = eigvects_coupled_g[:, :, ii].conj().transpose().dot(mat_sigp).dot(eigvects_coupled_e[:, :, ii])
         matrix_elems_sigm[:, :, ii] = eigvects_coupled_g[:, :, ii].conj().transpose().dot(mat_sigm).dot(eigvects_coupled_e[:, :, ii])
-        matrix_elems_pi[:, :, ii]   = eigvects_coupled_g[:, :, ii].conj().transpose().dot(mat_pi).dot(eigvects_coupled_e[:, :, ii])
+        matrix_elems_pi[:, :, ii] = eigvects_coupled_g[:, :, ii].conj().transpose().dot(mat_pi).dot(eigvects_coupled_e[:, :, ii])
 
     # absolute value of matrix elements
     abs_sigp = matrix_elems_sigp * matrix_elems_sigp.conj()
     abs_sigm = matrix_elems_sigm * matrix_elems_sigm.conj()
-    abs_pi   = matrix_elems_pi * matrix_elems_pi.conj()
+    abs_pi = matrix_elems_pi * matrix_elems_pi.conj()
     abs = abs_sigp + abs_sigm + abs_pi
 
     # these should all be the same. i.e., the net decay rate out of hyperfine states in the same manifold are the same
@@ -851,39 +937,39 @@ def get_branching_ratios(b_fields, atomic_params_g, qnumbers_g, atomic_params_e,
 
     for kk in range(0, b_fields.size):
         str = '****************************************************'
-        str = str + '********** B = %0.2fG **********\n' % b_fields[kk]
-        str = str + '********** all transitions **********\n'
+        str += '********** B = %0.2fG **********\n' % b_fields[kk]
+        str += '********** all transitions **********\n'
         for jj in range(0, nstates_e):
-            str = str +  "|%2d> -> " % (jj + 1)
+            str += "|%2d> -> " % (jj + 1)
             for ii in range(0, nstates_g):
                 if abs_norm[ii, jj, kk] > 1e-3:
-                    str = str + "%+0.3f |%2d> " % (abs_norm[ii, jj, kk], ii + 1)
-            str = str + '\n'
-        str = str + '\n'
+                    str += "%+0.3f |%2d> " % (abs_norm[ii, jj, kk], ii + 1)
+            str += '\n'
+        str += '\n'
 
-        str = str + '********** sigma plus transitions **********\n'
+        str += '********** sigma plus transitions **********\n'
         for jj in range(0, nstates_e):
-            str = str +  "|%2d> -> " % (jj + 1)
+            str += "|%2d> -> " % (jj + 1)
             for ii in range(0, nstates_g):
                 if abs_sigp_norm[ii, jj, kk] > 1e-3:
-                    str = str + "%+0.3f |%2d> " % (abs_sigp_norm[ii, jj, kk], ii + 1)
-            str = str + '\n'
+                    str += "%+0.3f |%2d> " % (abs_sigp_norm[ii, jj, kk], ii + 1)
+            str += '\n'
 
-        str = str + '********** sigma minus transitions **********\n'
+        str += '********** sigma minus transitions **********\n'
         for jj in range(0, nstates_e):
-            str = str + "|%2d> -> " % (jj + 1)
+            str += "|%2d> -> " % (jj + 1)
             for ii in range(0, nstates_g):
                 if abs_sigm_norm[ii, jj, kk] > 1e-3:
-                    str = str + "%+0.3f |%2d> " % (abs_sigm_norm[ii, jj, kk], ii + 1)
-            str = str + "\n"
+                    str += "%+0.3f |%2d> " % (abs_sigm_norm[ii, jj, kk], ii + 1)
+            str += "\n"
 
-        str = str + '********** pi transitions **********\n'
+        str += '********** pi transitions **********\n'
         for jj in range(0, nstates_e):
-            str = str + "|%2d> -> " % (jj + 1)
+            str += "|%2d> -> " % (jj + 1)
             for ii in range(0, nstates_g):
                 if abs_pi_norm[ii, jj, kk] > 1e-3:
-                    str = str + "%+0.3f |%2d> " % (abs_pi_norm[ii, jj, kk], ii + 1)
-            str = str + "\n"
+                    str += "%+0.3f |%2d> " % (abs_pi_norm[ii, jj, kk], ii + 1)
+            str += "\n"
 
         str_list.append(str)
 
@@ -901,6 +987,7 @@ def get_branching_ratios(b_fields, atomic_params_g, qnumbers_g, atomic_params_e,
     tensor_indices = [1, -1, 0]
 
     return matrix_elem_list, branching_ratio_list, tensor_indices, str_list
+
 
 # magnetic fields
 def get_gj(gfactors, qnumbers):
@@ -921,6 +1008,7 @@ def get_gj(gfactors, qnumbers):
          gs * (jj * (jj + 1) + ss * (ss + 1) - ll * (ll + 1)) / (2 * jj * (jj + 1))
     return gj
 
+
 def get_gf(gfactors, qnumbers):
     """
     Get approximate gf from gj, gi, and quantum numbers. This is useful when the I.J (hyperfine) coupling is strong compared to
@@ -937,6 +1025,7 @@ def get_gf(gfactors, qnumbers):
     ff = qnumbers[2]
     # same expression as gj because always combine two spins in same way
     return get_gj([gi, gj], [ii, jj, ff])
+
 
 def breit_rabi(b_fields, atomic_params, qnumbers):
     """
@@ -1003,6 +1092,7 @@ def breit_rabi(b_fields, atomic_params, qnumbers):
 
     return eig_energies, eigvects_uncoupled, eigvects_coupled
 
+
 def get_magnetic_moments(b_field, atomic_params, qnumbers, tol=1e-4, max_iters=100):
     """
     Get magnetic moment of state at given field
@@ -1010,10 +1100,10 @@ def get_magnetic_moments(b_field, atomic_params, qnumbers, tol=1e-4, max_iters=1
     :param b_field: In gauss
     :param atomic_params: [A, gs, gl, gi]
     :param qnumbers: [L, J, I]
+    :param tol:
+    :param max_iters:
     :return:
     """
-    #tol = 1e-4
-    #max_iters = 100
 
     # get number of states
     jj = qnumbers[1]
@@ -1033,7 +1123,7 @@ def get_magnetic_moments(b_field, atomic_params, qnumbers, tol=1e-4, max_iters=1
 
         # get moment
         es,  _, _ = breit_rabi([b_field + dBs[ii], b_field - dBs[ii]], atomic_params, qnumbers)
-        mag_mom[:, ii] = ( es[:, 0] - es[:, 1] ) / (2 * dBs[ii])
+        mag_mom[:, ii] = (es[:, 0] - es[:, 1]) / (2 * dBs[ii])
 
         # get difference
         if ii > 0:
@@ -1052,11 +1142,14 @@ def get_magnetic_moments(b_field, atomic_params, qnumbers, tol=1e-4, max_iters=1
 
     return mag_mom[:, -1]
 
+
 def breit_rabi_SLI(b_field, atomic_params, gfactors, qnumbers):
     """
-    Solve Hamiltonian H = Als * L.S + Ali * L.I + Asi * S.I + mub * ( gl * L + gs * s + gi * I) * B. Return energies and eigenstates in both the "coupled"
+    Solve Hamiltonian H = Als * L.S + Ali * L.I + Asi * S.I + mub * ( gl * L + gs * s + gi * I) * B.
+    Return energies and eigenstates in both the "coupled"
     (i.e. |F JI mf>) and "uncoupled" (i.e. |J mj, I mi>> bases.
     Note that gj is calculated from gs and gl.
+
     :param b_field: magnetic field
     :param atomic_params: =  [Als, Ali, Asi]
     :param gfactors: =  [gs, gl, gi]
@@ -1067,6 +1160,8 @@ def breit_rabi_SLI(b_field, atomic_params, gfactors, qnumbers):
     """
 
     # TODO: FINISH!
+    raise NotImplementedError()
+
     b_field = np.asarray(b_field)
     if b_field.ndim == 0:
         b_field = b_field[None]
@@ -1116,8 +1211,8 @@ def breit_rabi_SLI(b_field, atomic_params, gfactors, qnumbers):
     for ii in range(0, b_field.size):
         hamiltonian_uncoupled = h_hyperfine_uncoupled + b_field[ii] * h_zeeman_unc
         eig_energies[:, ii], eigvects_uncoupled[:, :, ii] = np.linalg.eigh(hamiltonian_uncoupled)
-        # transformation to coupled basis. That this is the appropriate transformation is clear if you regard the columns
-        # of eigvects_uncoupled as vectors
+        # transformation to coupled basis. That this is the appropriate transformation is clear
+        # if you regard the columns of eigvects_uncoupled as vectors
         eigvects_coupled[:, :, ii] = uncoupled2coupled_mat.dot(eigvects_uncoupled[:, :, ii])
 
     eig_energies = np.squeeze(eig_energies)
@@ -1125,6 +1220,7 @@ def breit_rabi_SLI(b_field, atomic_params, gfactors, qnumbers):
     eigvects_coupled = np.squeeze(eigvects_coupled)
 
     return eig_energies, eigvects_uncoupled, eigvects_coupled
+
 
 # get basis states
 def get_spin_basis(spin):
@@ -1140,6 +1236,7 @@ def get_spin_basis(spin):
     basis = np.concatenate((np.ones((nstates, 1)) * spin, ms[:, None]), axis=1)
 
     return basis
+
 
 def get_coupled_basis(qnumbers):
     """
@@ -1168,6 +1265,7 @@ def get_coupled_basis(qnumbers):
             coupled_states = np.concatenate((coupled_states, cstates), 0)
     return coupled_states
 
+
 def get_uncoupled_basis(qnumbers):
     """
     Return a two column matrix representing uncoupled atomic basis states, i.e. states with quantum numbers
@@ -1193,6 +1291,7 @@ def get_uncoupled_basis(qnumbers):
 
     return uncoupled_states
 
+
 # display functions
 def print_coupled_eigenstates(coupled_eigstates, coupled_basis):
     """
@@ -1212,6 +1311,7 @@ def print_coupled_eigenstates(coupled_eigstates, coupled_basis):
                 print("%+0.2f |F=%+0.1f, mf=%+0.1f> " % (coupled_eigstates[ii, jj], coupled_basis[ii, 0], coupled_basis[ii, 1]), end='')
         print('', end='\n')
     print('', end='\n')
+
 
 def print_uncoupled_eigenstates(uncoupled_eigstates, uncoupled_basis):
     """
@@ -1233,7 +1333,15 @@ def print_uncoupled_eigenstates(uncoupled_eigstates, uncoupled_basis):
         print('', end='\n')
     print('', end='\n')
 
-def plot_states_vs_field(b_fields, energies, uncoupled_basis, uncoupled_eigvects, coupled_basis, coupled_eigvects, desc_str='', plot_log=0):
+
+def plot_states_vs_field(b_fields,
+                         energies,
+                         uncoupled_basis,
+                         uncoupled_eigvects,
+                         coupled_basis,
+                         coupled_eigvects,
+                         desc_str='',
+                         plot_log=False):
     """
     Plot energies versus magnetic field and eigenstate overlap with the uncoupled basis (|J mj; I mi>) and the coupled
     or hyperfine basis (|F J I mf>). Generate the energies and overlap matrices using the function breit_rabi
@@ -1292,8 +1400,8 @@ def plot_states_vs_field(b_fields, energies, uncoupled_basis, uncoupled_eigvects
     # plot eigenstate overlaps with uncoupled basis states
     # #############################
     uncoupled_fig = plt.figure()
-    ncols = np.ceil(np.sqrt(nstates))
-    nrows = np.ceil(nstates / ncols)
+    ncols = int(np.ceil(np.sqrt(nstates)))
+    nrows = int(np.ceil(nstates / ncols))
 
     leg = []
     for ii in range(0, nstates):
@@ -1320,8 +1428,8 @@ def plot_states_vs_field(b_fields, energies, uncoupled_basis, uncoupled_eigvects
     # plot eigenstate overlaps with coupled basis states
     # #############################
     coupled_fig = plt.figure()
-    ncols = np.ceil(np.sqrt(nstates))
-    nrows = np.ceil(nstates / ncols)
+    ncols = int(np.ceil(np.sqrt(nstates)))
+    nrows = int(np.ceil(nstates / ncols))
 
     leg = []
     for ii in range(0, nstates):
@@ -1345,15 +1453,19 @@ def plot_states_vs_field(b_fields, energies, uncoupled_basis, uncoupled_eigvects
 
     return energies_fig, uncoupled_fig, coupled_fig
 
-def plot_branching_ratios(b_fields, branching_ratios, desc_str='', plot_log=0):
+
+def plot_branching_ratios(b_fields,
+                          branching_ratios,
+                          desc_str='',
+                          plot_log=False):
 
     nstates = branching_ratios.shape[0]
     nstates_e = branching_ratios.shape[1]
 
     # plot branching ratios
     branching_fig = plt.figure()
-    ncols = np.ceil(np.sqrt(nstates_e))
-    nrows = np.ceil(nstates_e / ncols)
+    ncols = int(np.ceil(np.sqrt(nstates_e)))
+    nrows = int(np.ceil(nstates_e / ncols))
 
     leg = []
     for ii in range(0, nstates):
@@ -1378,6 +1490,3 @@ def plot_branching_ratios(b_fields, branching_ratios, desc_str='', plot_log=0):
     plt.suptitle('%s branching ratios' % (desc_str))
 
     return branching_fig
-
-if __name__ == "__main__":
-    pass

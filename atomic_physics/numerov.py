@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sun Feb 09 13:50:10 2014
-
-@author: Peter
 """
 
 import numpy as np
-import math
+
 
 class numerov:
     def __init__(self, func, a, b):
@@ -23,6 +21,11 @@ class numerov:
         self.b = float(b)
         self.int_len = self.b - self.a
         self.func = func
+        self.f = None
+        self.rpts = None
+        self.xpts = None
+        self.w = None
+        self.g = None
 
     def back_numerov(self, steps):
         """solve equations of the form y(x)''-f(x)y(x)=0, beginning at end point
@@ -47,8 +50,9 @@ class numerov:
         y[steps - 2] = -1e-2
         # implement numerov
         for n in reversed(range(0, steps - 2)):
-            y[n] = (y[n + 1] * (2 + 5 * h ** 2 * self.f[n + 1] / 6) - y[n + 2] * (1 - h ** 2 * self.f[n + 2] / 12)) / (
-            1 - h ** 2 * self.f[n] / 12)
+            y[n] = (y[n + 1] * (2 + 5 * h ** 2 * self.f[n + 1] / 6) - y[n + 2] *
+                    (1 - h ** 2 * self.f[n + 2] / 12)) / \
+                    (1 - h ** 2 * self.f[n] / 12)
         return y
 
     def forw_numerov(self, steps):
@@ -74,8 +78,9 @@ class numerov:
         y[1] = h
         # implement numerov
         for n in range(2, steps):
-            y[n] = (y[n - 1] * (2 + 5 * h ** 2 * self.f[n - 1] / 6) - y[n - 2] * (1 - h ** 2 * self.f[n - 2] / 12)) / (
-            1 - h ** 2 * self.f[n] / 12)
+            y[n] = (y[n - 1] * (2 + 5 * h ** 2 * self.f[n - 1] / 6) - y[n - 2] *
+                    (1 - h ** 2 * self.f[n - 2] / 12)) / \
+                   (1 - h ** 2 * self.f[n] / 12)
         return y
 
     def log_back_numerov(self, steps):
@@ -85,18 +90,18 @@ class numerov:
        linearly distributed along r (being linearly distributed along x=log(r))"""
 
         def g(x):
-            return 0.25 + math.exp(2 * x) * self.func(math.exp(x))
+            return 0.25 + np.exp(2 * x) * self.func(np.exp(x))
 
         # set step size
-        h = (math.log(self.b) - math.log(self.a)) / steps
+        h = (np.log(self.b) - np.log(self.a)) / steps
         # initial lists
         w = np.zeros(steps)
         self.g = np.zeros(steps)
         self.xpts = np.zeros(steps)
         # set sample points and sample funtion
         for n in range(0, steps):
-            self.g[n] = g(math.log(self.a) + n * h)
-            self.xpts[n] = math.log(self.a) + n * h
+            self.g[n] = g(np.log(self.a) + n * h)
+            self.xpts[n] = np.log(self.a) + n * h
         self.rpts = np.exp(self.xpts)
         # set initial values
         w[steps - 1] = -1e-5
@@ -119,7 +124,7 @@ class numerov:
             return 4. * x ** 2 * self.func(x ** 2) + 3. / (4. * x ** 2)
 
         # set step size
-        h = (math.sqrt(self.b) - math.sqrt(self.a)) / steps
+        h = (np.sqrt(self.b) - np.sqrt(self.a)) / steps
         # initial lists
         w = np.zeros(steps)
         self.g = np.zeros(steps)
@@ -127,16 +132,17 @@ class numerov:
         self.rpts = np.zeros(steps)
         # set sample points and sample funtion
         for n in range(0, steps):
-            self.g[n] = g(math.sqrt(self.a) + n * h)
-            self.xpts[n] = math.sqrt(self.a) + n * h
+            self.g[n] = g(np.sqrt(self.a) + n * h)
+            self.xpts[n] = np.sqrt(self.a) + n * h
             self.rpts[n] = self.xpts[n] ** 2
         # set initial values
         w[steps - 1] = -1e-5
         w[steps - 2] = -1e-2
         # implement
         for n in reversed(range(0, steps - 2)):
-            w[n] = (w[n + 1] * (2 + 5 * h ** 2 * self.g[n + 1] / 6) - w[n + 2] * (1 - h ** 2 * self.g[n + 2] / 12)) / (
-            1 - h ** 2 * self.g[n] / 12)
+            w[n] = (w[n + 1] * (2 + 5 * h ** 2 * self.g[n + 1] / 6) - w[n + 2] *
+                    (1 - h ** 2 * self.g[n + 2] / 12)) / \
+                   (1 - h ** 2 * self.g[n] / 12)
         self.w = w
         y = w * np.sqrt(np.sqrt(self.rpts))
         return y

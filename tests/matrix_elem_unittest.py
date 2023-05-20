@@ -1,8 +1,7 @@
 import unittest
-
 import numpy as np
-import wigner
-import matrix_elem as mel
+import atomic_physics.matrix_elem as mel
+
 
 class matrix_elem_test(unittest.TestCase):
 
@@ -25,9 +24,9 @@ class matrix_elem_test(unittest.TestCase):
 
         # some small discrepancies. Not sure where these could be coming from. Perhaps Gehm is not
         # calculating these quantities but taking them from his reference 14.
-        self.assertTrue( np.round( gj_s - gj_s_gehm, 4) == 0)
-        self.assertTrue( np.round(gj_phalf - gj_phalf_gehm, 2) == 0)
-        self.assertTrue( np.round(gj_pthreehalf - gj_pthreehalf_gehm, 2) == 0)
+        self.assertTrue(np.round(gj_s - gj_s_gehm, 4) == 0)
+        self.assertTrue(np.round(gj_phalf - gj_phalf_gehm, 2) == 0)
+        self.assertTrue(np.round(gj_pthreehalf - gj_pthreehalf_gehm, 2) == 0)
 
     def test_gf(self):
         gfactors = []
@@ -46,7 +45,6 @@ class matrix_elem_test(unittest.TestCase):
         tensor_indices = [-1, 0, 1]
 
         # loop over different qnumbers
-
         # different polarizations
         for tensor_index in tensor_indices:
             # loop over second index quantum numbers
@@ -68,42 +66,101 @@ class matrix_elem_test(unittest.TestCase):
                                                 qnumbers2 = [L, S, J, I, F, mf]
 
                                                 # description string
-                                                mat_el_str = "<(L'S'J'I')F'mf'|u(1,q)|(LSJI)F mf> = <(%.1f %.1f %.1f %.1f) %.1f %.1f |u(1, %d)| (%.1f %.1f %.1f %.1f) %.1f %.1f>" \
-                                                             % (Lp, Sp, Jp, Ip, Fp, mfp, tensor_index, L, S, J, I, F, mf)
+                                                mat_el_str = "<(L'S'J'I')F'mf'|u(1,q)|(LSJI)F mf> = " \
+                                                             "<(%.1f %.1f %.1f %.1f) %.1f %.1f " \
+                                                             "|u(1, %d)| " \
+                                                             "(%.1f %.1f %.1f %.1f) %.1f %.1f>" \
+                                                             % (Lp, Sp, Jp, Ip, Fp, mfp, tensor_index,
+                                                                L, S, J, I, F, mf)
 
                                                 # matrix element up to radial matrix element
-                                                mat_el = mel.get_coupled_mat_element(qnumbers1, qnumbers2, tensor_index, radial_matrix_elem=1)
+                                                mat_el = mel.get_coupled_mat_element(qnumbers1,
+                                                                                     qnumbers2,
+                                                                                     tensor_index,
+                                                                                     radial_matrix_elem=1)
 
                                                 # reduced matrix elements using cg convention
-                                                mat_el_L = mel.get_reduced_mat_elem_L([Lp], [L], 1, convention='cg')
-                                                mat_el_fromL_cg = mel.get_mat_elem_from_redL(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_L=mat_el_L, convention='cg')
+                                                mat_el_L = mel.get_reduced_mat_elem_L([Lp], [L], 1,
+                                                                                      convention='cg')
+                                                mat_el_fromL_cg = mel.get_mat_elem_from_redL(qnumbers1,
+                                                                                             qnumbers2,
+                                                                                             tensor_index,
+                                                                                             reduced_mat_elem_L=mat_el_L,
+                                                                                             convention='cg')
 
-                                                mat_el_J = mel.get_reduced_mat_elem_J([Lp, Sp, Jp], [L, S, J], reduced_mat_elem_L=mat_el_L, convention='cg')
-                                                mat_el_fromJ_cg = mel.get_mat_elem_from_redJ(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_J=mat_el_J, convention='cg')
+                                                mat_el_J = mel.get_reduced_mat_elem_J([Lp, Sp, Jp],
+                                                                                      [L, S, J],
+                                                                                      reduced_mat_elem_L=mat_el_L,
+                                                                                      convention='cg')
+                                                mat_el_fromJ_cg = mel.get_mat_elem_from_redJ(qnumbers1,
+                                                                                             qnumbers2,
+                                                                                             tensor_index,
+                                                                                             reduced_mat_elem_J=mat_el_J,
+                                                                                             convention='cg')
 
-                                                mat_el_F = mel.get_reduced_mat_elem_F([Jp, Ip, Fp], [J, I, F], reduced_mat_elem_J=mat_el_J, convention='cg')
-                                                mat_el_fromF_cg = mel.get_mat_elem_from_redF(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_F=mat_el_F, convention='cg')
-
+                                                mat_el_F = mel.get_reduced_mat_elem_F([Jp, Ip, Fp],
+                                                                                      [J, I, F],
+                                                                                      reduced_mat_elem_J=mat_el_J,
+                                                                                      convention='cg')
+                                                mat_el_fromF_cg = mel.get_mat_elem_from_redF(qnumbers1,
+                                                                                             qnumbers2,
+                                                                                             tensor_index,
+                                                                                             reduced_mat_elem_F=mat_el_F,
+                                                                                             convention='cg')
 
                                                 # reduced matrix elements using wigner convention
-                                                mat_el_L = mel.get_reduced_mat_elem_L([Lp], [L], 1, convention='wigner')
-                                                mat_el_fromL_w = mel.get_mat_elem_from_redL(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_L=mat_el_L, convention='wigner')
+                                                mat_el_L = mel.get_reduced_mat_elem_L([Lp], [L], 1,
+                                                                                      convention='wigner')
+                                                mat_el_fromL_w = mel.get_mat_elem_from_redL(qnumbers1,
+                                                                                            qnumbers2,
+                                                                                            tensor_index,
+                                                                                            reduced_mat_elem_L=mat_el_L,
+                                                                                            convention='wigner')
 
-                                                mat_el_J = mel.get_reduced_mat_elem_J([Lp, Sp, Jp], [L, S, J], reduced_mat_elem_L=mat_el_L, convention='wigner')
-                                                mat_el_fromJ_w = mel.get_mat_elem_from_redJ(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_J=mat_el_J, convention='wigner')
+                                                mat_el_J = mel.get_reduced_mat_elem_J([Lp, Sp, Jp],
+                                                                                      [L, S, J],
+                                                                                      reduced_mat_elem_L=mat_el_L,
+                                                                                      convention='wigner')
+                                                mat_el_fromJ_w = mel.get_mat_elem_from_redJ(qnumbers1,
+                                                                                            qnumbers2,
+                                                                                            tensor_index,
+                                                                                            reduced_mat_elem_J=mat_el_J,
+                                                                                            convention='wigner')
 
-                                                mat_el_F = mel.get_reduced_mat_elem_F([Jp, Ip, Fp], [J, I, F], reduced_mat_elem_J=mat_el_J, convention='wigner')
-                                                mat_el_fromF_w = mel.get_mat_elem_from_redF(qnumbers1, qnumbers2, tensor_index, reduced_mat_elem_F=mat_el_F, convention='wigner')
+                                                mat_el_F = mel.get_reduced_mat_elem_F([Jp, Ip, Fp],
+                                                                                      [J, I, F],
+                                                                                      reduced_mat_elem_J=mat_el_J,
+                                                                                      convention='wigner')
+                                                mat_el_fromF_w = mel.get_mat_elem_from_redF(qnumbers1,
+                                                                                            qnumbers2,
+                                                                                            tensor_index,
+                                                                                            reduced_mat_elem_F=mat_el_F,
+                                                                                            convention='wigner')
 
                                                 # test equality
                                                 decimal_places = 12
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromL_cg, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| L ||>, cg convention" % mat_el_str)
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromJ_cg, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| J ||>, cg convention" % mat_el_str)
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromF_cg, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| F ||>, cg convention" % mat_el_str)
-
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromL_w, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| L ||>, wigner convention" % mat_el_str)
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromJ_w, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| J ||>, wigner convention" % mat_el_str)
-                                                self.assertEqual(np.round(mat_el, decimal_places), np.round(mat_el_fromF_w, decimal_places), "Failure comparing full matrix element\n %s\n to matrix element from <> * <|| F ||>, wigner convention" % mat_el_str)
+                                                msg = "Failure comparing full matrix element\n" \
+                                                      "%s\n" \
+                                                      "to matrix element from <> * <|| F ||>," \
+                                                      " wigner convention" % mat_el_str
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromL_cg, decimal_places),
+                                                                 msg)
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromJ_cg, decimal_places),
+                                                                 msg)
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromF_cg, decimal_places),
+                                                                 msg)
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromL_w, decimal_places),
+                                                                 msg)
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromJ_w, decimal_places),
+                                                                 msg)
+                                                self.assertEqual(np.round(mat_el, decimal_places),
+                                                                 np.round(mat_el_fromF_w, decimal_places),
+                                                                 msg)
 
     def test_decay_sumrule(self):
         """
@@ -112,7 +169,6 @@ class matrix_elem_test(unittest.TestCase):
                                           (2J' + 1)/(2J + 1) * |<J' || u(1) || J>|**2 (cg)
         :return:
         """
-
 
         L = 1
         S = 0.5
@@ -124,14 +180,22 @@ class matrix_elem_test(unittest.TestCase):
         Jp = 0.5
         Ip = 1
 
-        mat_els_wigner, pols, basis_p, basis = mel.get_all_coupled_mat_elements([Lp, Jp, Ip], [L, J, I], reduced_mat_elem=1., mode="J", convention="wigner")
+        mat_els_wigner, pols, basis_p, basis = mel.get_all_coupled_mat_elements([Lp, Jp, Ip],
+                                                                                [L, J, I],
+                                                                                reduced_mat_elem=1.,
+                                                                                mode="J",
+                                                                                convention="wigner")
         sum_gstates_wigner = np.sum(mat_els_wigner[0] ** 2 + mat_els_wigner[1] ** 2 + mat_els_wigner[2] ** 2, axis=0)
-        expected_gstates_wigner = 1. /(2 * J + 1)
+        expected_gstates_wigner = 1. / (2 * J + 1)
 
         sum_estates_wigner = np.sum(mat_els_wigner[0] ** 2 + mat_els_wigner[1] ** 2 + mat_els_wigner[2] ** 2, axis=1)
         expected_estates_wigner = 1. / (2 * Jp + 1)
 
-        mat_els_cg, _, _, _ = mel.get_all_coupled_mat_elements([Lp, Jp, Ip], [L, J, I], reduced_mat_elem=1., mode="J", convention="cg")
+        mat_els_cg, _, _, _ = mel.get_all_coupled_mat_elements([Lp, Jp, Ip],
+                                                               [L, J, I],
+                                                               reduced_mat_elem=1.,
+                                                               mode="J",
+                                                               convention="cg")
         sums_gstates_cg = np.sum(mat_els_cg[0] ** 2 + mat_els_cg[1] ** 2 + mat_els_cg[2] ** 2, axis=0)
         expected_gstates_cg = (2 * Jp + 1.) / (2 * J + 1)
 
@@ -140,12 +204,16 @@ class matrix_elem_test(unittest.TestCase):
 
         decimals = 15
         for ii in range(0, sum_gstates_wigner.size):
-            self.assertEqual(np.round(sum_gstates_wigner[ii], decimals), np.round( expected_gstates_wigner, decimals) )
-            self.assertEqual(np.round(sums_gstates_cg[ii], decimals), np.round(expected_gstates_cg, decimals))
+            self.assertEqual(np.round(sum_gstates_wigner[ii], decimals),
+                             np.round(expected_gstates_wigner, decimals))
+            self.assertEqual(np.round(sums_gstates_cg[ii], decimals),
+                             np.round(expected_gstates_cg, decimals))
 
         for ii in range(0, sum_estates_wigner.size):
-            self.assertEqual(np.round(sum_estates_wigner[ii], decimals), np.round(expected_estates_wigner, decimals))
-            self.assertEqual(np.round(sums_estates_cg[ii], decimals), np.round(expected_estates_cg, decimals))
+            self.assertEqual(np.round(sum_estates_wigner[ii], decimals),
+                             np.round(expected_estates_wigner, decimals))
+            self.assertEqual(np.round(sums_estates_cg[ii], decimals),
+                             np.round(expected_estates_cg, decimals))
 
     def test_matel_conjugation(self):
         """
@@ -160,13 +228,20 @@ class matrix_elem_test(unittest.TestCase):
         #qnumbers_d1 = [1, 0.5, 1]
         qnumbers_d2 = [1, 1.5, 1]
 
-
-        matel_ge, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g, qnumbers_d2, 1., mode="L", convention="wigner")
+        matel_ge, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g,
+                                                             qnumbers_d2,
+                                                             1.,
+                                                             mode="L",
+                                                             convention="wigner")
         ge_sigp = matel_ge[0]
         ge_sigm = matel_ge[1]
         ge_pi = matel_ge[2]
 
-        matel_eg, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_d2, qnumbers_g, 1., mode="L", convention="wigner")
+        matel_eg, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_d2,
+                                                             qnumbers_g,
+                                                             1.,
+                                                             mode="L",
+                                                             convention="wigner")
         eg_sigp = matel_eg[0]
         eg_sigm = matel_eg[1]
         eg_pi = matel_eg[2]
@@ -177,10 +252,12 @@ class matrix_elem_test(unittest.TestCase):
         #self.assertTrue(np.round(np.max(ge_pi - eg_pi.conj().transpose()), 15) == 0)
 
     def test_Li_matel(self):
-        # compare lithium matrix elements as multiples of the <J' || u(1) || J> reduced matrix elements to Gehm calculations.
+        # compare lithium matrix elements as multiples of the <J' || u(1) || J>
+        # reduced matrix elements to Gehm calculations.
         # <F' mf' | u(1,q) | F mf> / <J' | u(1) | J>
         # where primes are ground state
-        # TODO: Some sign differences from Gehm matrix elements. But keep things this way because agree with Steck matrix elements.
+        # TODO: Some sign differences from Gehm matrix elements.
+        #  But keep things this way because agree with Steck matrix elements.
 
         # D1 and D2 quantum numbers
         # [L, J, I]
@@ -188,14 +265,20 @@ class matrix_elem_test(unittest.TestCase):
         qnumbers_d1 = [1, 0.5, 1]
         qnumbers_d2 = [1, 1.5, 1]
 
-        mat_els_d1, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g, qnumbers_d1, reduced_mat_elem=1, mode="J",
+        mat_els_d1, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g,
+                                                               qnumbers_d1,
+                                                               reduced_mat_elem=1,
+                                                               mode="J",
                                                                convention="wigner")
         # reverse sigma-plus and sigma-minus to match gehm convention
         mat_sigp_d1 = mat_els_d1[1]
         mat_sigm_d1 = mat_els_d1[0]
         mat_pi_d1 = mat_els_d1[2]
 
-        mat_els_d2, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g, qnumbers_d2, reduced_mat_elem=1, mode="J",
+        mat_els_d2, _, _, _ = mel.get_all_coupled_mat_elements(qnumbers_g,
+                                                               qnumbers_d2,
+                                                               reduced_mat_elem=1,
+                                                               mode="J",
                                                                convention="wigner")
         # reverse sigma-plus and sigma-minus to match gehm convention
         mat_sigp_d2 = mat_els_d2[1]
@@ -254,13 +337,19 @@ class matrix_elem_test(unittest.TestCase):
                                            np.sqrt(3. / 20), 0, 0],
                                           [0, 0, 0, 0, 0, -np.sqrt(1. / 15), 0, 0, 0, 0, np.sqrt(1. / 10), 0]])
 
-        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d1 - mat_sigp_d1_gehm)), 15) == 0, "D1 sigma+ transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d1 - mat_sigm_d1_gehm)), 15) == 0, "D1 sigma- transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_pi_d1 - mat_pi_d1_gehm)), 15) == 0, "D1 pi transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d1 - mat_sigp_d1_gehm)), 15) == 0,
+                        "D1 sigma+ transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d1 - mat_sigm_d1_gehm)), 15) == 0,
+                        "D1 sigma- transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_pi_d1 - mat_pi_d1_gehm)), 15) == 0,
+                        "D1 pi transitions")
 
-        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d2 - mat_sigp_d2_gehm)), 15) == 0, "D2 sigma+ transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d2 - mat_sigm_d2_gehm)), 15) == 0, "D2 sigma- transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_pi_d2 - mat_pi_d2_gehm)), 15) == 0, "D2 pi transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d2 - mat_sigp_d2_gehm)), 15) == 0,
+                        "D2 sigma+ transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d2 - mat_sigm_d2_gehm)), 15) == 0,
+                        "D2 sigma- transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_pi_d2 - mat_pi_d2_gehm)), 15) == 0,
+                        "D2 pi transitions")
 
     def test_Rb_matel(self):
         # compare matrix elements <(S'L'J'I')F' mf' | u(1,q) | (SLJI)F mf> / <J' || u(1) || J>
@@ -274,15 +363,21 @@ class matrix_elem_test(unittest.TestCase):
         qnumbers_d2 = [1, 1.5, 1.5]
 
         # get all matrix elements
-        mat_els_d1, _, basis_g, basis_d1 = mel.get_all_coupled_mat_elements(qnumbers_g, qnumbers_d1, reduced_mat_elem=1,
-                                                                            mode="J", convention="cg")
+        mat_els_d1, _, basis_g, basis_d1 = mel.get_all_coupled_mat_elements(qnumbers_g,
+                                                                            qnumbers_d1,
+                                                                            reduced_mat_elem=1,
+                                                                            mode="J",
+                                                                            convention="cg")
         # reverse sigma-plus and sigma-minus to match steck convention
         mat_sigp_d1 = mat_els_d1[1]
         mat_sigm_d1 = mat_els_d1[0]
         mat_pi_d1 = mat_els_d1[2]
 
-        mat_els_d2, _, _, basis_d2 = mel.get_all_coupled_mat_elements(qnumbers_g, qnumbers_d2, reduced_mat_elem=1,
-                                                                      mode="J", convention="cg")
+        mat_els_d2, _, _, basis_d2 = mel.get_all_coupled_mat_elements(qnumbers_g,
+                                                                      qnumbers_d2,
+                                                                      reduced_mat_elem=1,
+                                                                      mode="J",
+                                                                      convention="cg")
         # reverse sigma-plus and sigma-minus to match steck convention
         mat_sigp_d2 = mat_els_d2[1]
         mat_sigm_d2 = mat_els_d2[0]
@@ -350,24 +445,34 @@ class matrix_elem_test(unittest.TestCase):
                                      -np.sqrt(4. / 15), 0, 0],
                                     [0, 0, 0, 0, 0, 0, 0, 0, np.sqrt(1. / 6), 0, 0, 0, 0, 0, -np.sqrt(1. / 6), 0]])
 
-        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d1 - mat_sigp_d1_steck)), 15) == 0, "D1 sigma+ transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d1 - mat_sigm_d1_steck)), 15) == 0, "D1 sigma- transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_pi_d1 - mat_pi_d1_steck)), 15) == 0, "D1 pi transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d1 - mat_sigp_d1_steck)), 15) == 0,
+                        "D1 sigma+ transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d1 - mat_sigm_d1_steck)), 15) == 0,
+                        "D1 sigma- transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_pi_d1 - mat_pi_d1_steck)), 15) == 0,
+                        "D1 pi transitions")
 
-        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d2 - mat_sigp_d2_steck)), 15) == 0, "D2 sigma+ transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d2 - mat_sigm_d2_steck)), 15) == 0, "D2 sigma- transitions")
-        self.assertTrue(np.round(np.max(np.abs(mat_pi_d2 - mat_pi_d2_steck)), 15) == 0, "D2 pi transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigp_d2 - mat_sigp_d2_steck)), 15) == 0,
+                        "D2 sigma+ transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_sigm_d2 - mat_sigm_d2_steck)), 15) == 0,
+                        "D2 sigma- transitions")
+        self.assertTrue(np.round(np.max(np.abs(mat_pi_d2 - mat_pi_d2_steck)), 15) == 0,
+                        "D2 pi transitions")
 
     # test conversion between decay rates and matrix elements
     def test_Li_decayrates_matel(self):
         # values from Gehm Lithium datasheet. Note that he has an error of a factor of 2*pi in Gamma.
         # Test that reduced matrix element and decay rate Gamma are consistent.
         Gamma = (2 * np.pi) * 5.8724e6
-        D1_red_J_matel = -2.812e-29 # C * m
+        D1_red_J_matel = -2.812e-29  # C * m
 
-        Gamma_calc = mel.get_decay_rate_Dline(670.992421e-9, 0.5, 0.5, D1_red_J_matel, convention='wigner')
+        Gamma_calc = mel.get_decay_rate_Dline(670.992421e-9,
+                                              0.5, 0.5,
+                                              D1_red_J_matel,
+                                              convention='wigner')
 
-        self.assertTrue( np.round(np.abs(Gamma - Gamma_calc) / Gamma, 3) == 0, "lithium decay rate and matrix element inconsistent." )
+        self.assertTrue(np.round(np.abs(Gamma - Gamma_calc) / Gamma, 3) == 0,
+                        "lithium decay rate and matrix element inconsistent.")
 
     def test_Rb_decayrates_matels(self):
         # D2 line for Rb-87 from Steck datasheet. Test that reduced matrix element and decay rate Gamma are consistent.
@@ -375,9 +480,14 @@ class matrix_elem_test(unittest.TestCase):
         D2_red_J_matel = 3.58494e-29  # C * m
         lambda_o = 780.241209686e-9
 
-        Gamma_calc = mel.get_decay_rate_Dline(lambda_o, 1.5, 0.5, D2_red_J_matel, convention='cg')
+        Gamma_calc = mel.get_decay_rate_Dline(lambda_o,
+                                              1.5, 0.5,
+                                              D2_red_J_matel,
+                                              convention='cg')
 
-        self.assertTrue( np.round(np.abs(Gamma - Gamma_calc) / Gamma, 3) == 0, "Rubidium decay and matrix element inconsistent.")
+        self.assertTrue(np.round(np.abs(Gamma - Gamma_calc) / Gamma, 3) == 0,
+                         "Rubidium decay and matrix element inconsistent.")
+
 
 if __name__ == '__main__':
     unittest.main()
