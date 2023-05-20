@@ -13,6 +13,13 @@ Useful background reading
 - Daniel Steck's atomic physics [notes](https://atomoptics.uoregon.edu/~dsteck/teaching/quantum-optics/).
 - J.T.M. Walraven's [notes](https://staff.fnwi.uva.nl/j.t.m.walraven/walraven/Lectures.htm)
 - [Optical molasses and multilevel atoms: theory](https://doi.org/10.1364/JOSAB.6.002058)
+- [Optical dipole traps for neutral atoms](https://doi.org/10.1016/s1049-250x(08)60186-x)
+- [Fourier-transform-spectroscopy measurements in the spectra of neutral lithium, ⁶I and ⁷I (li i)](https://doi.org/10.1103/physreva.52.4462 )
+- [Quantum-state control in optical lattices](https://doi.org/10.1103/PhysRevA.57.1972)
+- [Reduced dipole matrix element for photoionization calculation of two open-shell atoms or ions](https://doi.org/10.1103/PhysRevA.68.054701)
+- [Critically evaluated theoretical energies, lifetimes, hyperfine constants, and multipole polarizabilities in Rb 87](https://doi.org/10.1103/PhysRevA.83.052508)
+- [Magic wavelengths for optical cooling and trapping of lithium](https://doi.org/10.1103/PhysRevA.86.042505)
+- [Magnetic-field dependence of raman coupling in alkali-metal atoms](https://doi.org/10.1103/PhysRevA.87.042514)
 
 To install this code
 ```
